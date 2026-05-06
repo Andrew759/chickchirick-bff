@@ -1,0 +1,31 @@
+services:
+  nginx-bff:
+    build:
+      context: .
+      dockerfile: ./build/dev/nginx/Dockerfile
+    ports:
+      - '86:80'
+    depends_on:
+      - api-bff
+    networks:
+      - backend-bff
+      - chickchirick-shared-network
+
+  api-bff:
+    build:
+      context: .
+      dockerfile: ./build/dev/Dockerfile
+    ports:
+      - "8086:8080"
+      - "40006:40000" # Порт для подключения IDE к отладчику
+      - "6066:6060" #Порт трассировщика
+      #- "50052:50052"
+    cap_add:
+      - SYS_PTRACE # Разрешает Delve управлять процессом
+    security_opt:
+      - "seccomp=unconfined" # Отключает фильтрацию системных вызовов
+    volumes:
+      - .:/app
+    networks:
+      - backend-bff
+      - chickchirick-shared-network

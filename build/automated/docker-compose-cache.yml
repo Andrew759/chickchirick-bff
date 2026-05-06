@@ -1,0 +1,29 @@
+services:
+  nginx-bff:
+    build: ./build/automated/nginx
+    ports:
+      #TODO: убрать хардкод
+      - '86:80'
+    depends_on:
+      - api-bff-automated
+    networks:
+      - backend-bff
+
+  api-bff-automated:
+    build:
+      context: .
+      dockerfile: ./build/automated/Dockerfile-cache
+    # Переменные окружения для ускорения BuildKit
+    environment:
+      - DOCKER_BUILDKIT=1
+    ports:
+      #TODO: убрать хардкод
+      - "8086:8080"
+    # volumes:
+    #   - .:/app
+    networks:
+      - backend-bff
+
+networks:
+  backend-bff:
+
