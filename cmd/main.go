@@ -3,6 +3,7 @@ package main
 import (
 	"chickchirick-auth/cmd/config"
 	"chickchirick-auth/cmd/factory"
+	"chickchirick-auth/cmd/service"
 )
 
 func main() {
@@ -10,8 +11,11 @@ func main() {
 
 	appConfig := config.AppConfiguration{}.NewAppConfiguration()
 
-	//TODO: если не потребуется - удалить
-	//httpClient := factory.InitHttpClient()
+	redisDecorator := service.InitRedis(appConfig.RedisConfig)
+	defer redisDecorator.RedisClose()
 
-	factory.BuildAndServe(dbDecorator, redisDecorator)
+	//TODO: если не потребуется - удалить
+	httpClient := factory.InitHttpClient()
+
+	factory.BuildAndServe(redisDecorator)
 }
