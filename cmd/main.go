@@ -1,9 +1,9 @@
 package main
 
 import (
-	"chickchirick-auth/cmd/config"
-	"chickchirick-auth/cmd/factory"
-	"chickchirick-auth/cmd/service"
+	"chickchirick-bff/cmd/config"
+	"chickchirick-bff/cmd/factory"
+	"chickchirick-bff/cmd/service"
 )
 
 func main() {
@@ -17,5 +17,5 @@ func main() {
 	//TODO: если не потребуется - удалить
 	httpClient := factory.InitHttpClient()
 
-	factory.BuildAndServe(redisDecorator)
+	factory.BuildAndServe(redisDecorator, httpClient)
 }

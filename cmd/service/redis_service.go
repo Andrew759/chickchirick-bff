@@ -1,7 +1,7 @@
 package service
 
 import (
-	"chickchirick-auth/cmd/config"
+	"chickchirick-bff/cmd/config"
 	"fmt"
 	"strconv"
 
