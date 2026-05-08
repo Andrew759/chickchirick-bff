@@ -2,8 +2,7 @@ services:
   nginx-bff:
     build: ./build/automated/nginx
     ports:
-      #TODO: убрать хардкод
-      - '86:80'
+      - "${NGINX_BFF_PORT:-86}:80"
     depends_on:
       - api-bff-automated
     networks:
@@ -17,8 +16,7 @@ services:
     environment:
       - DOCKER_BUILDKIT=1
     ports:
-      #TODO: убрать хардкод
-      - "8086:8080"
+      - "${API_BFF_PORT:-8086}:8080"
     # volumes:
     #   - .:/app
     networks:

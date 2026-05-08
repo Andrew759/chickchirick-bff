@@ -2,6 +2,8 @@ package service
 
 import (
 	"chickchirick-bff/internal/controller/c_controller"
+	"chickchirick-bff/internal/request"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,8 +16,16 @@ func (uc *UserController) RegisterRouter() {
 	e := uc.Controller.E
 
 	group := e.Group("/user")
-	group.POST("/login", uc.GetUser)
+	group.POST("/create", uc.GetUser)
+	group.POST("")
 }
 
-func (uc *UserController) GetUser(ctx *gin.Context) {
+func (uc *UserController) GetUser(c *gin.Context) {
+	var createUserRequest request.CreateUserRequest
+	if err := c.ShouldBindJSON(&ctr); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input"})
+		return
+	}
+
+	uc.Controller.DI.Client.Post()
 }

@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: ./build/dev/nginx/Dockerfile
     ports:
-      - '86:80'
+      - "${NGINX_BFF_PORT:-86}:80"
     depends_on:
       - api-bff
     networks:
