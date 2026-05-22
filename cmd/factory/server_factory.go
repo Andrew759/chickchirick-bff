@@ -2,6 +2,7 @@ package factory
 
 import (
 	"chickchirick-bff/cmd/service"
+	"chickchirick-bff/internal/controller/c_controller"
 	"chickchirick-bff/pkg/chirick_config"
 	"net/http"
 
@@ -25,8 +26,7 @@ func BuildServer(rDecorator *service.RedisDecorator, client *http.Client) error 
 
 	e.Use(cors.New(config))
 
-	InitCreateUserService(e, rDecorator, client)
-	//InitAuthServer(e, &c_controller.DIContainer{DBDecorator: dbDecorator, RedisDecorator: redisDecorator})
+	InitUserServer(e, &c_controller.DIContainer{RedisDecorator: rDecorator, Client: client})
 
 	err := e.Run()
 	if err != nil {

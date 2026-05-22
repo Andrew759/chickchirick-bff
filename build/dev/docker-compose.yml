@@ -16,9 +16,9 @@ services:
       context: .
       dockerfile: ./build/dev/Dockerfile
     ports:
-      - "8086:8080"
-      - "40006:40000" # Порт для подключения IDE к отладчику
-      - "6066:6060" #Порт трассировщика
+      - "${API_BFF_PORT:-8086}:8080"
+      - "${API_BFF_DELVE_PORT:-40006}:40000" # Порт для подключения IDE к отладчику
+      - "${API_BFF_PROFILER_PORT:-6066}:6060" #Порт трассировщика
       #- "50052:50052"
     cap_add:
       - SYS_PTRACE # Разрешает Delve управлять процессом
