@@ -19,8 +19,8 @@ func InitUserServer(e *gin.Engine, diContainer *c_controller.DIContainer) {
 func (u UserServer) initCreateUserService(e *gin.Engine, diContainer *c_controller.DIContainer) internalService.UserController {
 	createUserService := internalService.UserController{
 		Controller: c_controller.Controller{
-			E:  e,
-			DI: diContainer,
+			E:           e,
+			DIContainer: diContainer,
 		},
 	}
 	createUserService.RegisterRouter()

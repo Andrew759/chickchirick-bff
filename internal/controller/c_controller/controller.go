@@ -13,8 +13,8 @@ type DIContainer struct {
 }
 
 type Controller struct {
-	E  *gin.Engine
-	DI *DIContainer
+	E *gin.Engine
+	*DIContainer
 }
 
 type RequestHandler interface {
