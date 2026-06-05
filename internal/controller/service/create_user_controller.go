@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"chickchirick-bff/internal/controller/c_controller"
 	"chickchirick-bff/internal/request"
+	"chickchirick-bff/internal/service"
 	chirikconfig "chickchirick-bff/pkg/chirick_config"
 	"encoding/json"
 	"io"
@@ -57,24 +58,47 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		}
 	}(createUserResp.Body)
 
-	createUPropertyReqData := make(map[string]string)
+	var createUserRespResult map[string]interface{}
+	err = json.NewDecoder(createUserResp.Body).Decode(&createUserRespResult)
+	if err != nil {
+		slog.Error("invalid json: ", err)
+	}
+
+	if service.IsInternalServerError(createUserResp.StatusCode) {
+		c.JSON(createUserResp.StatusCode, "internal server error")
+		return
+	}
+	if !service.IsStatusCodeOK(createUserResp.StatusCode) {
+		c.JSON(createUserResp.StatusCode, createUserRespResult)
+		return
+	}
+
+	createUPropertyReqData := make(map[string]interface{})
+	createUPropertyReqData["user_id"] = createUserRespResult["payload"].(map[string]interface{})["id"]
 	if createUserRequest.Email != nil {
 		createUPropertyReqData["email"] = *createUserRequest.Email
 	}
 	if createUserRequest.Password != nil {
 		createUPropertyReqData["password"] = *createUserRequest.Password
 	}
-	//createUPropertyReqData["user_id"]
+
+	createUPropertyReqBody, err := json.Marshal(createUPropertyReqData)
+	if err != nil {
+		slog.Error("error marshaling request data: ", err.Error())
+	}
 
 	createUserPropertyResp, err := uc.Controller.Client.Post(
 		viper.GetString(chirikconfig.UserApp)+"/property",
 		"application/json",
-		bytes.NewBuffer(createUPropertyReqData),
+		bytes.NewBuffer(createUPropertyReqBody), // Теперь здесь []byte
 	)
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			slog.Error("error closing body: ", err.Error())
-		}
-	}(createUserPropertyResp.Body)
+
+	var createUserPropertyRespResult map[string]interface{}
+	err = json.NewDecoder(createUserPropertyResp.Body).Decode(&createUserPropertyRespResult)
+	if err != nil {
+		slog.Error("invalid json: ", err)
+	}
+
+	//TODO: удалить мок
+	println(createUserPropertyRespResult)
 }

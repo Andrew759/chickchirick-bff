@@ -4,6 +4,7 @@ package chirik_config
 const (
 	ServerUrl = "SERVER_URL"
 	UserApp   = "USER_APP"
+	AuthApp   = "AUTH_APP"
 )
 
 // environment
