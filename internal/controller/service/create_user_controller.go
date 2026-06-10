@@ -27,42 +27,19 @@ func (uc *UserController) RegisterRouter() {
 }
 
 func (uc *UserController) CreateUser(c *gin.Context) {
-	createUserRequest, createUserRespResult, sentErr := uc.createUser(c)
+	createUserRequest, createUserRespResult, sentErr := uc.createBasicUser(c)
 	if sentErr {
 		return
 	}
 
-	createUPropertyReqData := make(map[string]any)
-	createUPropertyReqData["user_id"] = createUserRespResult["payload"].(map[string]any)["id"]
-	if createUserRequest.Email != nil {
-		createUPropertyReqData["email"] = *createUserRequest.Email
-	}
-	if createUserRequest.Password != nil {
-		createUPropertyReqData["password"] = *createUserRequest.Password
-	}
-
-	createUPropertyReqBody, err := json.Marshal(createUPropertyReqData)
-	if err != nil {
-		slog.Error("error marshaling request data: ", err.Error())
-	}
-
-	createUserPropertyResp, err := uc.Controller.Client.Post(
-		viper.GetString(chirikconfig.UserApp)+"/property",
-		"application/json",
-		bytes.NewBuffer(createUPropertyReqBody), // Теперь здесь []byte
-	)
-
-	var createUserPropertyRespResult map[string]any
-	err = json.NewDecoder(createUserPropertyResp.Body).Decode(&createUserPropertyRespResult)
-	if err != nil {
-		slog.Error("invalid json: ", err)
-	}
+	uc.createUserMeta(c, createUserRespResult)
+	uc.createUserProperty(c, createUserRequest, createUserRespResult)
 
 	//TODO: удалить мок
-	println(createUserPropertyRespResult)
+	//println(createUserPropertyRespResult)
 }
 
-func (uc *UserController) createUser(c *gin.Context) (
+func (uc *UserController) createBasicUser(c *gin.Context) (
 	createUserRequest request.CreateUserRequest,
 	createUserRespResult map[string]any,
 	sentErr bool,
@@ -116,6 +93,54 @@ func (uc *UserController) createUser(c *gin.Context) (
 	return
 }
 
-func (u *UserController) createUserMeta(c *gin.Context) {
+func (uc *UserController) createUserMeta(c *gin.Context, createUserRespResult map[string]any) {
+	userId := createUserRespResult["payload"].(map[string]any)["id"]
 
+	createUMetaReqData := make(map[string]any)
+	createUMetaReqData["id"] = userId
+
+	createUMetaReqJson, err := json.Marshal(createUMetaReqData)
+	if err != nil {
+		slog.Error("json marshal error: ", err.Error())
+	}
+
+	createUMetaResp, err := uc.Controller.Client.Post(
+		viper.GetString(chirikconfig.UserApp)+"/meta",
+		"application/json",
+		bytes.NewBuffer(createUMetaReqJson),
+	)
+
+	var createUserMetaRespResult map[string]any
+	err = json.NewDecoder(createUMetaResp.Body).Decode(&createUserMetaRespResult)
+	if err != nil {
+		slog.Error("invalid json: ", err)
+	}
+}
+
+func (uc *UserController) createUserProperty(c *gin.Context, createUserRequest request.CreateUserRequest, createUserRespResult map[string]any) {
+	createUPropertyReqData := make(map[string]any)
+	createUPropertyReqData["user_id"] = createUserRespResult["payload"].(map[string]any)["id"]
+	if createUserRequest.Email != nil {
+		createUPropertyReqData["email"] = *createUserRequest.Email
+	}
+	if createUserRequest.Password != nil {
+		createUPropertyReqData["password"] = *createUserRequest.Password
+	}
+
+	createUPropertyReqBody, err := json.Marshal(createUPropertyReqData)
+	if err != nil {
+		slog.Error("error marshaling request data: ", err.Error())
+	}
+
+	createUserPropertyResp, err := uc.Controller.Client.Post(
+		viper.GetString(chirikconfig.UserApp)+"/property",
+		"application/json",
+		bytes.NewBuffer(createUPropertyReqBody), // Теперь здесь []byte
+	)
+
+	var createUserPropertyRespResult map[string]any
+	err = json.NewDecoder(createUserPropertyResp.Body).Decode(&createUserPropertyRespResult)
+	if err != nil {
+		slog.Error("invalid json: ", err)
+	}
 }
