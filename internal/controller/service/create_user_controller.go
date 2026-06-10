@@ -32,8 +32,8 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
-	uc.createUserMeta(c, createUserRespResult)
-	uc.createUserProperty(c, createUserRequest, createUserRespResult)
+	uc.createUserMeta(createUserRespResult)
+	uc.createUserProperty(createUserRequest, createUserRespResult)
 
 	//TODO: удалить мок
 	//println(createUserPropertyRespResult)
@@ -93,11 +93,11 @@ func (uc *UserController) createBasicUser(c *gin.Context) (
 	return
 }
 
-func (uc *UserController) createUserMeta(c *gin.Context, createUserRespResult map[string]any) {
+func (uc *UserController) createUserMeta(createUserRespResult map[string]any) {
 	userId := createUserRespResult["payload"].(map[string]any)["id"]
 
 	createUMetaReqData := make(map[string]any)
-	createUMetaReqData["id"] = userId
+	createUMetaReqData["user_id"] = userId
 
 	createUMetaReqJson, err := json.Marshal(createUMetaReqData)
 	if err != nil {
@@ -117,7 +117,7 @@ func (uc *UserController) createUserMeta(c *gin.Context, createUserRespResult ma
 	}
 }
 
-func (uc *UserController) createUserProperty(c *gin.Context, createUserRequest request.CreateUserRequest, createUserRespResult map[string]any) {
+func (uc *UserController) createUserProperty(createUserRequest request.CreateUserRequest, createUserRespResult map[string]any) {
 	createUPropertyReqData := make(map[string]any)
 	createUPropertyReqData["user_id"] = createUserRespResult["payload"].(map[string]any)["id"]
 	if createUserRequest.Email != nil {
