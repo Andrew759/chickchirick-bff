@@ -26,55 +26,14 @@ func (uc *UserController) RegisterRouter() {
 	group.POST("/create", uc.CreateUser)
 }
 
-// TODO: вынести внутреннюю логику в отдельный сервис
 func (uc *UserController) CreateUser(c *gin.Context) {
-	var createUserRequest request.CreateUserRequest
-	if err := c.ShouldBindJSON(&createUserRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input"})
+	createUserRequest, createUserRespResult, sentErr := uc.createUser(c)
+	if sentErr {
 		return
 	}
 
-	createUserReqData := make(map[string]string)
-	createUserReqData["name"] = createUserRequest.Name
-	createUserReqData["surname"] = createUserRequest.Surname
-	createUserReqData["login"] = createUserRequest.Login
-	createUserReqData["phone"] = createUserRequest.Phone
-
-	createUserReqJson, err := json.Marshal(createUserReqData)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "json marshal error"})
-		return
-	}
-
-	createUserResp, err := uc.Controller.Client.Post(
-		viper.GetString(chirikconfig.UserApp)+"/user",
-		"application/json",
-		bytes.NewBuffer(createUserReqJson),
-	)
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			slog.Error("error closing body: ", err.Error())
-		}
-	}(createUserResp.Body)
-
-	var createUserRespResult map[string]interface{}
-	err = json.NewDecoder(createUserResp.Body).Decode(&createUserRespResult)
-	if err != nil {
-		slog.Error("invalid json: ", err)
-	}
-
-	if service.IsInternalServerError(createUserResp.StatusCode) {
-		c.JSON(createUserResp.StatusCode, "internal server error")
-		return
-	}
-	if !service.IsStatusCodeOK(createUserResp.StatusCode) {
-		c.JSON(createUserResp.StatusCode, createUserRespResult)
-		return
-	}
-
-	createUPropertyReqData := make(map[string]interface{})
-	createUPropertyReqData["user_id"] = createUserRespResult["payload"].(map[string]interface{})["id"]
+	createUPropertyReqData := make(map[string]any)
+	createUPropertyReqData["user_id"] = createUserRespResult["payload"].(map[string]any)["id"]
 	if createUserRequest.Email != nil {
 		createUPropertyReqData["email"] = *createUserRequest.Email
 	}
@@ -93,7 +52,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		bytes.NewBuffer(createUPropertyReqBody), // Теперь здесь []byte
 	)
 
-	var createUserPropertyRespResult map[string]interface{}
+	var createUserPropertyRespResult map[string]any
 	err = json.NewDecoder(createUserPropertyResp.Body).Decode(&createUserPropertyRespResult)
 	if err != nil {
 		slog.Error("invalid json: ", err)
@@ -101,4 +60,62 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 
 	//TODO: удалить мок
 	println(createUserPropertyRespResult)
+}
+
+func (uc *UserController) createUser(c *gin.Context) (
+	createUserRequest request.CreateUserRequest,
+	createUserRespResult map[string]any,
+	sentErr bool,
+) {
+	if err := c.ShouldBindJSON(&createUserRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input"})
+		return
+	}
+
+	createUserReqData := make(map[string]string)
+	createUserReqData["name"] = createUserRequest.Name
+	createUserReqData["surname"] = createUserRequest.Surname
+	createUserReqData["login"] = createUserRequest.Login
+	createUserReqData["phone"] = createUserRequest.Phone
+
+	createUserReqJson, err := json.Marshal(createUserReqData)
+	if err != nil {
+		sentErr = true
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "json marshal error"})
+		return
+	}
+
+	createUserResp, err := uc.Controller.Client.Post(
+		viper.GetString(chirikconfig.UserApp)+"/user",
+		"application/json",
+		bytes.NewBuffer(createUserReqJson),
+	)
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			slog.Error("error closing body: ", err.Error())
+		}
+	}(createUserResp.Body)
+
+	err = json.NewDecoder(createUserResp.Body).Decode(&createUserRespResult)
+	if err != nil {
+		slog.Error("invalid json: ", err)
+	}
+
+	if service.IsInternalServerError(createUserResp.StatusCode) {
+		sentErr = true
+		c.JSON(createUserResp.StatusCode, "internal server error")
+		return
+	}
+	if !service.IsStatusCodeOK(createUserResp.StatusCode) {
+		sentErr = true
+		c.JSON(createUserResp.StatusCode, createUserRespResult)
+		return
+	}
+
+	return
+}
+
+func (u *UserController) createUserMeta(c *gin.Context) {
+
 }
