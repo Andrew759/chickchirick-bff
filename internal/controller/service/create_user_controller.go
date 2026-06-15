@@ -32,11 +32,10 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
-	uc.createUserMeta(createUserRespResult)
+	createUserMetaRespResult := uc.createUserMeta(createUserRespResult)
+	uc.authUser(createUserRequest, createUserMetaRespResult)
 	uc.createUserProperty(createUserRequest, createUserRespResult)
 
-	//TODO: удалить мок
-	//println(createUserPropertyRespResult)
 }
 
 func (uc *UserController) createBasicUser(c *gin.Context) (
@@ -93,7 +92,7 @@ func (uc *UserController) createBasicUser(c *gin.Context) (
 	return
 }
 
-func (uc *UserController) createUserMeta(createUserRespResult map[string]any) {
+func (uc *UserController) createUserMeta(createUserRespResult map[string]any) map[string]any {
 	userId := createUserRespResult["payload"].(map[string]any)["id"]
 
 	createUMetaReqData := make(map[string]any)
@@ -115,6 +114,8 @@ func (uc *UserController) createUserMeta(createUserRespResult map[string]any) {
 	if err != nil {
 		slog.Error("invalid json: ", err)
 	}
+
+	return createUserMetaRespResult
 }
 
 func (uc *UserController) createUserProperty(createUserRequest request.CreateUserRequest, createUserRespResult map[string]any) {
@@ -143,4 +144,27 @@ func (uc *UserController) createUserProperty(createUserRequest request.CreateUse
 	if err != nil {
 		slog.Error("invalid json: ", err)
 	}
+}
+
+func (uc *UserController) authUser(createUserRequest request.CreateUserRequest, createUserMetaRespResult map[string]any) {
+	createAuthUserReqData := make(map[string]any)
+	createAuthUserReqData["password"] = ""
+	if createUserRequest.Password != nil {
+		createAuthUserReqData["password"] = *createUserRequest.Password
+	}
+	createAuthUserReqData["user_uuid"] = createUserMetaRespResult["payload"].(map[string]any)["user_uuid"]
+
+	createAuthUserReqBody, err := json.Marshal(createAuthUserReqData)
+	if err != nil {
+		slog.Error("error marshaling request data: ", err.Error())
+	}
+
+	createAuthUserResp, err := uc.Controller.Client.Post(
+		viper.GetString(chirikconfig.AuthApp)+"/user/create",
+		"application/json",
+		bytes.NewBuffer(createAuthUserReqBody), // Теперь здесь []byte
+	)
+
+	//TODO: удалить мок
+	println(createAuthUserResp)
 }
