@@ -3,10 +3,12 @@ package service
 import (
 	"bytes"
 	"chickchirick-bff/internal/controller/c_controller"
+	"chickchirick-bff/internal/controller/dto/user"
 	"chickchirick-bff/internal/request"
 	"chickchirick-bff/internal/service"
 	chirikconfig "chickchirick-bff/pkg/chirick_config"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -33,8 +35,12 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	}
 
 	createUserMetaRespResult := uc.createUserMeta(createUserRespResult)
-	uc.authUser(createUserRequest, createUserMetaRespResult)
+	tokens := uc.createAuthUser(createUserRequest, createUserMetaRespResult)
+	//TODO: тут прокинуть токены
 	uc.createUserProperty(createUserRequest, createUserRespResult)
+
+	//TODO: удалить мок
+	fmt.Print(tokens)
 
 }
 
@@ -146,7 +152,10 @@ func (uc *UserController) createUserProperty(createUserRequest request.CreateUse
 	}
 }
 
-func (uc *UserController) authUser(createUserRequest request.CreateUserRequest, createUserMetaRespResult map[string]any) {
+func (uc *UserController) createAuthUser(
+	createUserRequest request.CreateUserRequest,
+	createUserMetaRespResult map[string]any,
+) user.Tokens {
 	createAuthUserReqData := make(map[string]any)
 	createAuthUserReqData["password"] = ""
 	if createUserRequest.Password != nil {
@@ -162,9 +171,19 @@ func (uc *UserController) authUser(createUserRequest request.CreateUserRequest, 
 	createAuthUserResp, err := uc.Controller.Client.Post(
 		viper.GetString(chirikconfig.AuthApp)+"/user/create",
 		"application/json",
-		bytes.NewBuffer(createAuthUserReqBody), // Теперь здесь []byte
+		bytes.NewBuffer(createAuthUserReqBody),
 	)
 
-	//TODO: удалить мок
-	println(createAuthUserResp)
+	tokens := user.Tokens{}
+	cookies := createAuthUserResp.Cookies()
+	for _, cookie := range cookies {
+		switch cookie.Name {
+		case "access_token":
+			tokens.AccessToken = cookie.Value
+		case "refresh_token":
+			tokens.RefreshToken = cookie.Value
+		}
+	}
+
+	return tokens
 }
